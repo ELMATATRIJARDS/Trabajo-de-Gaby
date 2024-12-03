@@ -1,32 +1,31 @@
-const CACHE_NAME = "ruleta-quiz-v1";
-const urlsToCache = [
-  "./",
-  "./index.html",
-  "./script.js",
-  "./manifest.json",
-  "./icon-192x192.png",
-  "./icon-512x512.png"
+const CACHE_NAME = 'ruleta-cache-v1';
+const FILES_TO_CACHE = [
+  './',               // Raíz del sitio
+  './index.html',      // Archivo HTML principal
+  './manifest.json',   // Manifiesto de la PWA
+  './icon.png',        // Icono de la PWA
+  './style.css',       // Estilos CSS
+  './script.js',       // Script principal
 ];
 
-// Instalar el Service Worker
-self.addEventListener("install", event => {
+// Evento de instalación: Se ejecuta cuando el Service Worker se instala
+self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      console.log("Archivos en caché");
-      return cache.addAll(urlsToCache);
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(FILES_TO_CACHE);  // Guardar los archivos en caché
     })
   );
 });
 
-// Activar el Service Worker
-self.addEventListener("activate", event => {
+// Evento de activación: Se ejecuta cuando el Service Worker se activa
+self.addEventListener('activate', (event) => {
+  const cacheWhitelist = [CACHE_NAME];  // Solo mantener el caché actual
   event.waitUntil(
-    caches.keys().then(cacheNames => {
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map(cache => {
-          if (cache !== CACHE_NAME) {
-            console.log("Cache antigua eliminada:", cache);
-            return caches.delete(cache);
+        cacheNames.map((cacheName) => {
+          if (!cacheWhitelist.includes(cacheName)) {
+            return caches.delete(cacheName);  // Eliminar cachés antiguos
           }
         })
       );
@@ -34,11 +33,11 @@ self.addEventListener("activate", event => {
   );
 });
 
-// Interceptar solicitudes
-self.addEventListener("fetch", event => {
+// Evento de fetch: Intercepta las peticiones de red y sirve desde el caché si es posible
+self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
+    caches.match(event.request).then((cachedResponse) => {
+      return cachedResponse || fetch(event.request);  // Si está en caché, devuelve desde ahí; si no, realiza la petición
     })
   );
 });
